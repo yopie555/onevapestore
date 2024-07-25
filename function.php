@@ -12,4 +12,6 @@ if (!$connection) {
     echo "Koneksi database gagal: " . mysqli_connect_error();
     exit();
 }
+
+
 ?>
