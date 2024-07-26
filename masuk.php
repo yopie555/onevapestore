@@ -24,6 +24,71 @@ if(isset($_POST['barangmasuk'])){
     exit();
 }
 
+//update barang masuk
+if(isset($_POST['updatebarang'])){
+    $qty = $_POST['qty'];
+    $penerima = $_POST['penerima'];
+    $idb = $_POST['idb'];
+    $idm = $_POST['idm'];
+    $qtyskrg = $_POST['qtyskrg'];
+    $idbarang = $_POST['nama_barang'];
+    //ambil data stock lama
+    $ambildatastock = mysqli_query($connection, "SELECT * FROM stock WHERE idbarang='$idbarang'");
+    $fetcharray = mysqli_fetch_array($ambildatastock);
+    $stock = $fetcharray['stock'];
+
+    $stockskrng = mysqli_query($connection, "SELECT * FROM masuk WHERE idmasuk='$idm'");
+    $fetcharray = mysqli_fetch_array($stockskrng);
+    $stockskrng = $fetcharray['qty'];
+
+    //kurangi stock lama dengan stock baru
+    if($qty > $qtyskrg){
+        $selisih = $qty - $qtyskrg;
+        $stockupdate = $stock + $selisih;
+        $kuranginstocknya = mysqli_query($connection, "UPDATE stock SET stock='$stockupdate' WHERE idbarang='$idbarang'");
+        $updatenya = mysqli_query($connection, "UPDATE masuk SET qty='$qty', penerima='$penerima', idbarang='$idbarang' WHERE idmasuk='$idm'");
+        if (!$kuranginstocknya && !$updatenya) {
+            die("Query Error: " . mysqli_error($connection));
+        }else{
+            header("Location: masuk.php");
+            exit();
+        }
+    } else {
+        $selisih = $qtyskrg - $qty;
+        $stockupdate = $stock - $selisih;
+        $kuranginstocknya = mysqli_query($connection, "UPDATE stock SET stock='$stockupdate' WHERE idbarang='$idbarang'");
+        $updatenya = mysqli_query($connection, "UPDATE masuk SET qty='$qty', penerima='$penerima', idbarang='$idbarang' WHERE idmasuk='$idm'");
+        if (!$kuranginstocknya && !$updatenya) {
+            die("Query Error: " . mysqli_error($connection));
+        }else{
+            header("Location: masuk.php");
+            exit();
+        }
+    }
+ 
+}
+
+//hapus barang masuk
+if(isset($_POST['hapusbarang'])){
+    $idb = $_POST['idb'];
+    $idm = $_POST['idm'];
+    $qtyskrg = $_POST['qtyskrg'];
+    $idbarang = $_POST['nama_barang'];
+    //ambil data stock lama
+    $ambildatastock = mysqli_query($connection, "SELECT * FROM stock WHERE idbarang='$idb'");
+    $fetcharray = mysqli_fetch_array($ambildatastock);
+    $stock = $fetcharray['stock'];
+    //kurangi stock lama dengan stock baru
+    $stockupdate = $stock - $qtyskrg;
+    //update stock
+    $addstock = mysqli_query($connection, "UPDATE stock SET stock='$stockupdate' WHERE idbarang='$idb'");
+    $hapusbarang = mysqli_query($connection, "DELETE FROM masuk WHERE idmasuk='$idm'");
+    if (!$hapusbarang && !$addstock) {
+        die("Query Error: " . mysqli_error($connection));
+    }
+    header("Location: masuk.php");
+    exit();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -88,25 +153,114 @@ if(isset($_POST['barangmasuk'])){
                                         <th>No</th>
                                         <th>Nama Barang</th>
                                         <th>Jenis</th>
-                                        <th>Stock</th>
-                                        <th>Harga</th>
+                                        <th>Qty</th>
+                                        <th>Tanggal</th>
+                                        <th>Penerima</th>
+                                        <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>1</td>
-                                        <td>Ronin Jeju orange 60ml</td>
-                                        <td>Liquid Freebase</td>
-                                        <td>6pcs</td>
-                                        <td>115000</td>
-                                    </tr>
-                                    <tr>
-                                        <td>2</td>
-                                        <td>Bequ orange 60ml</td>
-                                        <td>Liquid Freebase</td>
-                                        <td>6pcs</td>
-                                        <td>115000</td>
-                                    </tr>
+                                    <?php
+                                    $ambilsemuadatastock = mysqli_query($connection, "SELECT * FROM masuk m, stock s WHERE s.idbarang = m.idbarang");
+                                    $i = 1;
+                                    while ($data = mysqli_fetch_array($ambilsemuadatastock)) {
+                                        $namabarang = $data['namabarang'];
+                                        $jenisbarang = $data['jenis'];
+                                        $qty = $data['qty'];
+                                        $tanggal = $data['tanggal'];
+                                        $penerima = $data['penerima'];
+                                    ?>
+                                        <tr>
+                                            <td><?= $i++; ?></td>
+                                            <td><?= $namabarang; ?></td>
+                                            <td><?= $jenisbarang; ?></td>
+                                            <td><?= $qty; ?></td>
+                                            <td><?= $tanggal; ?></td>
+                                            <td><?= $penerima; ?></td>
+                                            <td>
+                                                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#edit<?= $data['idmasuk']; ?>">
+                                                    Edit
+                                                </button>
+                                                <input type="hidden" class="idmasuk<?= $data['idmasuk']; ?>" value="<?= $data['idmasuk']; ?>">
+                                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete<?= $data['idmasuk']; ?>">
+                                                    Delete
+                                                </button>
+                                        </tr>
+
+                                        <!-- Edit Modal -->
+                                        <div class="modal fade" id="edit<?= $data['idmasuk']; ?>">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+
+                                                    <!-- Modal Header -->
+                                                    <div class="modal-header">
+                                                        <h4 class="modal-title">Edit Barang Masuk</h4>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+
+                                                    <!-- Modal body -->
+                                                    <form method="post">
+                                                        <div class="modal-body">
+                                                            <select name="nama_barang" class="form-control">
+                                                                <?php
+                                                                $ambilsemuadata = mysqli_query($connection, "SELECT * FROM stock");
+                                                                while ($fetcharray = mysqli_fetch_array($ambilsemuadata)) {
+                                                                    $namabarang = $fetcharray['namabarang'];
+                                                                    $idbarang = $fetcharray['idbarang'];
+                                                                ?>
+                                                                    <option value="<?= $idbarang; ?>"><?= $namabarang ?></option>
+                                                                <?php
+                                                                }
+                                                                ?>
+                                                            </select>
+                                                            <br>
+                                                            <input type="number" name="qty" value="<?= $qty; ?>" class="form-control" require>
+                                                            <br>
+                                                            <input type="hidden" name="idb" value="<?= $data['idbarang']; ?>">
+                                                            <input type="hidden" name="idm" value="<?= $data['idmasuk']; ?>">
+                                                            <input type="hidden" class="qtyskrg<?= $data['idmasuk']; ?>" value="<?= $data['qty']; ?>">
+                                                            <input type="text" name="penerima" value="<?= $penerima; ?>" class="form-control" require>
+                                                            <br>
+                                                            <button type="submit" class="btn btn-primary" name="updatebarang">Update</button>
+                                                        </div>
+                                                    </form>
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="delete<?= $data['idmasuk']; ?>">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+
+                                                    <!-- Modal Header -->
+                                                    <div class="modal-header">
+                                                        <h4 class="modal-title">Hapus Barang Masuk</h4>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+
+                                                    <!-- Modal body -->
+                                                    <form method="post">
+                                                        <div class="modal-body">
+                                                            Apakah Anda yakin ingin menghapus <?= $namabarang; ?>?
+                                                            <input type="hidden" name="idb" value="<?= $data['idbarang']; ?>">
+                                                            <input type="hidden" name="idm" value="<?= $data['idmasuk']; ?>">
+                                                            <input type="hidden" name="qtyskrg" value="<?= $data['qty']; ?>">
+                                                            <input type="hidden" name="nama_barang" value="<?= $data['idbarang']; ?>">
+                                                            <br>
+                                                            <br>
+                                                            <button type="submit" class="btn btn-danger" name="hapusbarang">Hapus</button>
+                                                        </div>
+                                                    </form>
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    <?php
+                                    }
+                                    ?>
                                 </tbody>
                             </table>
                         </div>

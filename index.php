@@ -3,7 +3,7 @@ require 'function.php';
 require 'cek.php';
 
 //menambah barang baru
-if(isset($_POST['submit'])){
+if (isset($_POST['submit'])) {
     $namabarang = $_POST['namabarang'];
     $jenis = $_POST['jenis'];
     $stock = $_POST['stock'];
@@ -16,6 +16,35 @@ if(isset($_POST['submit'])){
     header("Location: index.php");
     exit();
 }
+
+//update barang
+if (isset($_POST['updatebarang'])) {
+    $namabarang = $_POST['namabarang'];
+    $jenis = $_POST['jenis'];
+    $stock = $_POST['stock'];
+    $harga = $_POST['harga'];
+    $idbarang = $_POST['idbarang'];
+    $sql = "UPDATE stock SET namabarang='$namabarang', jenis='$jenis', stock='$stock', harga='$harga' WHERE idbarang='$idbarang'";
+    $result = mysqli_query($connection, $sql);
+    if (!$result) {
+        die("Query Error: " . mysqli_error($connection));
+    }
+    header("Location: index.php");
+    exit();
+}
+
+//hapus barang
+if (isset($_POST['hapusbarang'])) {
+    $idbarang = $_POST['idbarang'];
+    $sql = "DELETE FROM stock WHERE idbarang='$idbarang'";
+    $result = mysqli_query($connection, $sql);
+    if (!$result) {
+        die("Query Error: " . mysqli_error($connection));
+    }
+    header("Location: index.php");
+    exit();
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -82,23 +111,95 @@ if(isset($_POST['submit'])){
                                         <th>Jenis</th>
                                         <th>Stock</th>
                                         <th>Harga</th>
+                                        <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>1</td>
-                                        <td>Ronin Jeju orange 60ml</td>
-                                        <td>Liquid Freebase</td>
-                                        <td>6pcs</td>
-                                        <td>115000</td>
-                                    </tr>
-                                    <tr>
-                                        <td>2</td>
-                                        <td>Bequ orange 60ml</td>
-                                        <td>Liquid Freebase</td>
-                                        <td>6pcs</td>
-                                        <td>115000</td>
-                                    </tr>
+                                    <?php
+                                    $sql = "SELECT * FROM stock";
+                                    $sql = mysqli_query($connection, $sql);
+                                    $no = 1;
+                                    while ($row = mysqli_fetch_array($sql)) {
+                                        $namabarang = $row['namabarang'];
+                                        $jenis = $row['jenis'];
+                                        $stock = $row['stock'];
+                                        $harga = $row['harga'];
+                                    ?>
+                                        <tr>
+                                            <td><?= $no++; ?></td>
+                                            <td><?= $namabarang; ?></td>
+                                            <td><?= $jenis; ?></td>
+                                            <td><?= $stock; ?></td>
+                                            <td><?= $harga; ?></td>
+                                            <td>
+                                                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#edit<?= $row['idbarang']; ?>">
+                                                    Edit
+                                                </button>
+                                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete<?= $row['idbarang']; ?>">
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                        <!-- The Modal Edit -->
+                                        <div class="modal fade" id="edit<?= $row['idbarang']; ?>">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+
+                                                    <!-- Modal Header -->
+                                                    <div class="modal-header">
+                                                        <h4 class="modal-title">Edit Barang</h4>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+
+                                                    <!-- Modal body -->
+                                                    <form method="post">
+                                                        <div class="modal-body">
+                                                            <input type="text" name="namabarang" value="<?= $namabarang; ?>" class="form-control" required>
+                                                            <br>
+                                                            <input type="text" name="jenis" value="<?= $jenis; ?>" class="form-control" required>
+                                                            <br>
+                                                            <input type="number" name="stock" value="<?= $stock; ?>" class="form-control" readonly>
+                                                            <br>
+                                                            <input type="number" name="harga" value="<?= $harga; ?>" class="form-control" required>
+                                                            <br>
+                                                            <input type="hidden" name="idbarang" value="<?= $row['idbarang']; ?>">
+                                                            <button type="submit" class="btn btn-primary" name="updatebarang">Update</button>
+                                                        </div>
+                                                    </form>
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- The Modal Delete -->
+                                        <div class="modal fade" id="delete<?= $row['idbarang']; ?>">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+
+                                                    <!-- Modal Header -->
+                                                    <div class="modal-header">
+                                                        <h4 class="modal-title">Hapus Barang</h4>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+
+                                                    <!-- Modal body -->
+                                                    <form method="post">
+                                                        <div class="modal-body                                                    ">
+                                                            Apakah Anda Yakin Ingin Menghapus <?= $namabarang; ?>?
+                                                            <input type="hidden" name="idbarang" value="<?= $row['idbarang']; ?>">
+                                                            <br>
+                                                            <br>
+                                                            <button type="submit" class="btn btn-danger" name="hapusbarang">Hapus</button>
+                                                        </div>
+                                                    </form>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php
+                                    };
+                                    ?>
                                 </tbody>
                             </table>
                         </div>

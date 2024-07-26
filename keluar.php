@@ -1,6 +1,85 @@
 <?php
 require 'function.php';
 require 'cek.php';
+
+//menambah barang keluar
+if (isset($_POST['barangkeluar'])) {
+    $idbarang = $_POST['nama_barang'];
+    $qty = $_POST['qty'];
+    $penerima = $_POST['penerima'];
+
+    $getdatastock = mysqli_query($connection, "SELECT * FROM stock WHERE idbarang='$idbarang'");
+    $fetcharray = mysqli_fetch_array($getdatastock);
+    $stock = $fetcharray['stock'];
+
+    if ($qty > $stock) {
+        echo '<script>alert("Stock Tidak Mencukupi")</script>';
+    } else {
+        $insertbarang = mysqli_query($connection, "INSERT INTO keluar (idbarang, qty, penerima) VALUES ('$idbarang', '$qty', '$penerima')");
+        if (!$insertbarang) {
+            die("Query Error: " . mysqli_error($connection));
+        } else {
+            $newstock = $stock - $qty;
+            $updatestock = mysqli_query($connection, "UPDATE stock SET stock='$newstock' WHERE idbarang='$idbarang'");
+            if (!$updatestock) {
+                die("Query Error: " . mysqli_error($connection));
+            } else {
+                header("Location: keluar.php");
+                exit();
+            }
+        }
+    }
+}
+
+//update barang keluar
+if (isset($_POST['updatebarang'])) {
+    $idb = $_POST['idb'];
+    $idm = $_POST['idm'];
+    $qty = $_POST['qty'];
+    $penerima = $_POST['penerima'];
+    $qtyskrg = $_POST['qtyskrg'];
+    $idbarang = $_POST['nama_barang'];
+
+    $getdatastock = mysqli_query($connection, "SELECT * FROM stock WHERE idbarang='$idbarang'");
+    $fetcharray = mysqli_fetch_array($getdatastock);
+    $stock = $fetcharray['stock'];
+
+    $selisih = $qtyskrg - $qty;
+
+    if ($selisih > $stock) {
+        echo '<script>alert("Stock Tidak Mencukupi")</script>';
+    } else {
+        $updatestock = mysqli_query($connection, "UPDATE stock SET stock=stock+'$selisih' WHERE idbarang='$idbarang'");
+        $updatebarang = mysqli_query($connection, "UPDATE keluar SET idbarang='$idbarang', qty='$qty', penerima='$penerima' WHERE idkeluar='$idm'");
+        if (!$updatestock && !$updatebarang) {
+            die("Query Error: " . mysqli_error($connection));
+        } else {
+            header("Location: keluar.php");
+            exit();
+        }
+    }
+}
+
+//hapus barang keluar
+if(isset($_POST['hapusbarang'])){
+    $idb = $_POST['idb'];
+    $idkeluar = $_POST['idkeluar'];
+    $qtyskrg = $_POST['qtyskrg'];
+    $idbarang = $_POST['nama_barang'];
+    //ambil data stock lama
+    $ambildatastock = mysqli_query($connection, "SELECT * FROM stock WHERE idbarang='$idbarang'");
+    $fetcharray = mysqli_fetch_array($ambildatastock);
+    $stock = $fetcharray['stock'];
+
+    $kuranginstocknya = mysqli_query($connection, "UPDATE stock SET stock=stock+'$qtyskrg' WHERE idbarang='$idbarang'");
+    $hapusdata = mysqli_query($connection, "DELETE FROM keluar WHERE idkeluar='$idkeluar'");
+    if (!$kuranginstocknya && !$hapusdata) {
+        die("Query Error: " . mysqli_error($connection));
+    }else{
+        header("Location: keluar.php");
+        exit();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -65,25 +144,119 @@ require 'cek.php';
                                         <th>No</th>
                                         <th>Nama Barang</th>
                                         <th>Jenis</th>
-                                        <th>Stock</th>
-                                        <th>Harga</th>
+                                        <th>Qty</th>
+                                        <th>Tanggal</th>
+                                        <th>Penerima</th>
+                                        <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>1</td>
-                                        <td>Ronin Jeju orange 60ml</td>
-                                        <td>Liquid Freebase</td>
-                                        <td>6pcs</td>
-                                        <td>115000</td>
-                                    </tr>
-                                    <tr>
-                                        <td>2</td>
-                                        <td>Bequ orange 60ml</td>
-                                        <td>Liquid Freebase</td>
-                                        <td>6pcs</td>
-                                        <td>115000</td>
-                                    </tr>
+                                    <?php
+                                    $ambilsemuadatastock = mysqli_query($connection, "SELECT * FROM keluar k, stock s WHERE s.idbarang = k.idbarang");
+                                    $i = 1;
+                                    while ($data = mysqli_fetch_array($ambilsemuadatastock)) {
+                                        $namabarang = $data['namabarang'];
+                                        $jenisbarang = $data['jenis'];
+                                        $qty = $data['qty'];
+                                        $tanggal = $data['tanggal'];
+                                        $penerima = $data['penerima'];
+                                    ?>
+                                        <tr>
+                                            <td><?= $i++; ?></td>
+                                            <td><?= $namabarang; ?></td>
+                                            <td><?= $jenisbarang; ?></td>
+                                            <td><?= $qty; ?></td>
+                                            <td><?= $tanggal; ?></td>
+                                            <td><?= $penerima; ?></td>
+                                            <td>
+                                                <?php
+                                                $idkeluar = $data['idkeluar'];
+                                                ?>
+                                                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#edit<?= $idkeluar; ?>">
+                                                    Edit
+                                                </button>
+                                                <input type="hidden" class="idmasuk<?= $data['idkeluar']; ?>" value="<?= $data['idkeluar']; ?>">
+                                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete<?= $idkeluar; ?>">
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                       
+
+                                        <!-- Edit Modal -->
+                                        <div class="modal fade" id="edit<?= $data['idkeluar']; ?>">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+
+                                                    <!-- Modal Header -->
+                                                    <div class="modal-header">
+                                                        <h4 class="modal-title">Edit Barang Keluar</h4>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+
+                                                    <!-- Modal body -->
+                                                    <form method="post">
+                                                        <div class="modal-body">
+                                                            <select name="nama_barang" class="form-control">
+                                                                <?php
+                                                                $ambilsemuadata = mysqli_query($connection, "SELECT * FROM stock");
+                                                                while ($fetcharray = mysqli_fetch_array($ambilsemuadata)) {
+                                                                    $namabarang = $fetcharray['namabarang'];
+                                                                    $idbarang = $fetcharray['idbarang'];
+                                                                ?>
+                                                                    <option value="<?= $idbarang; ?>"><?= $namabarang ?></option>
+                                                                <?php
+                                                                }
+                                                                ?>
+                                                            </select>
+                                                            <br>
+                                                            <input type="number" name="qty" value="<?= $qty; ?>" class="form-control" required>
+                                                            <br>
+                                                            <input type="hidden" name="idb" value="<?= $data['idbarang']; ?>">
+                                                            <input type="hidden" name="idm" value="<?= $data['idkeluar']; ?>">
+                                                            <input type="hidden" class="qtyskrg<?= $data['idkeluar']; ?>" value="<?= $data['qty']; ?>">
+                                                            <input type="text" name="penerima" value="<?= $penerima; ?>" class="form-control" require>
+                                                            <br>
+                                                            <button type="submit" class="btn btn-primary" name="updatebarang">Update</button>
+                                                        </div>
+                                                    </form>
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="delete<?= $data['idkeluar']; ?>">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+
+                                                    <!-- Modal Header -->
+                                                    <div class="modal-header">
+                                                        <h4 class="modal-title">Hapus Barang Keluar</h4>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+
+                                                    <!-- Modal body -->
+                                                    <form method="post">
+                                                        <div class="modal-body">
+                                                            Apakah Anda Yakin Ingin Menghapus <?= $namabarang; ?>?
+                                                            <input type="hidden" name="idb" value="<?= $data['idbarang']; ?>">
+                                                            <input type="hidden" name="idkeluar" value="<?= $data['idkeluar']; ?>">
+                                                            <input type="hidden" name="qtyskrg" value="<?= $data['qty']; ?>">
+                                                            <input type="hidden" name="nama_barang" value="<?= $data['idbarang']; ?>">
+                                                            <br>
+                                                            <br>
+                                                            <button type="submit" class="btn btn-danger" name="hapusbarang">Hapus</button>
+                                                        </div>
+                                                    </form>
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    <?php
+                                    }
+                                    ?>
                                 </tbody>
                             </table>
                         </div>
@@ -125,19 +298,42 @@ require 'cek.php';
             <!-- Modal body -->
             <form method="post">
                 <div class="modal-body">
-                    <input type="text" name="namabarang" placeholder="Nama Barang" class="form-control">
+                    <select name="nama_barang" class="form-control">
+                        <?php
+                        $ambilsemuadata = mysqli_query($connection, "SELECT * FROM stock");
+                        while ($fetcharray = mysqli_fetch_array($ambilsemuadata)) {
+                            $namabarang = $fetcharray['namabarang'];
+                            $idbarang = $fetcharray['idbarang'];
+                        ?>
+                            <option value="<?= $idbarang; ?>"><?= $namabarang ?></option>
+                        <?php
+                        }
+                        ?>
+                    </select>
                     <br>
-                    <input type="text" name="jenis" placeholder="Jenis Barang" class="form-control" require>
+                    <select name="jenis_barang" class="form-control">
+                        <?php
+                        $ambilsemuadata = mysqli_query($connection, "SELECT * FROM stock");
+                        while ($fetcharray = mysqli_fetch_array($ambilsemuadata)) {
+                            $jenis = $fetcharray['jenis'];
+                            $idbarang = $fetcharray['idbarang'];
+                        ?>
+                            <option value="<?= $idbarang; ?>"><?= $jenis ?></option>
+                        <?php
+                        }
+                        ?>
+                    </select>
                     <br>
-                    <input type="number" name="stock" placeholder="Stock" class="form-control" require>
+                    <input type="number" name="qty" placeholder="Quantity" class="form-control" require>
                     <br>
-                    <input type="number" name="harga" placeholder="Harga" class="form-control" require>
+                    <input type="text" name="penerima" placeholder="Penerima" class="form-control" require>
                     <br>
-                    <button type="submit" class="btn btn-primary" name="submit">Simpan</button>
+                    <button type="submit" class="btn btn-primary" name="barangkeluar">Simpan</button>
                 </div>
             </form>
 
         </div>
     </div>
 </div>
+
 </html>
