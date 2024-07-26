@@ -146,6 +146,7 @@ if(isset($_POST['hapusbarang'])){
                                 <thead>
                                     <tr>
                                         <th>No</th>
+                                        <th>Gambar</th>
                                         <th>Nama Barang</th>
                                         <th>Jenis</th>
                                         <th>Qty</th>
@@ -159,6 +160,12 @@ if(isset($_POST['hapusbarang'])){
                                     $ambilsemuadatastock = mysqli_query($connection, "SELECT * FROM keluar k, stock s WHERE s.idbarang = k.idbarang");
                                     $i = 1;
                                     while ($data = mysqli_fetch_array($ambilsemuadatastock)) {
+                                        $image = $data['image'];
+                                        if ($image == null) {
+                                            $image = "No photo";
+                                        } else {
+                                            $image = '<img src="images/' . $image . '" width="50px" height="50px">';
+                                        }
                                         $namabarang = $data['namabarang'];
                                         $jenisbarang = $data['jenis'];
                                         $qty = $data['qty'];
@@ -167,6 +174,7 @@ if(isset($_POST['hapusbarang'])){
                                     ?>
                                         <tr>
                                             <td><?= $i++; ?></td>
+                                            <td><?= $image; ?></td>
                                             <td><?= $namabarang; ?></td>
                                             <td><?= $jenisbarang; ?></td>
                                             <td><?= $qty; ?></td>

@@ -8,34 +8,116 @@ if (isset($_POST['submit'])) {
     $jenis = $_POST['jenis'];
     $stock = $_POST['stock'];
     $harga = $_POST['harga'];
-    $sql = "INSERT INTO stock (namabarang, jenis, stock, harga) VALUES ('$namabarang', '$jenis', '$stock', '$harga')";
-    $result = mysqli_query($connection, $sql);
-    if (!$result) {
-        die("Query Error: " . mysqli_error($connection));
+
+    $allowed_ext = array('png', 'jpg', 'jpeg');
+    $file_name = $_FILES['file']['name'];
+    $dot = explode('.', $file_name);
+    $file_ext = strtolower(end($dot));
+    $size = $_FILES['file']['size'];
+    $file_tmp = $_FILES['file']['tmp_name'];
+    $image = md5(uniqid($file_name, true) . time()) . '.' . $file_ext;
+
+    //cek barang sudah ada atau belum
+    $cek = mysqli_query($connection, "SELECT * FROM stock WHERE namabarang='$namabarang'");
+    $hitung = mysqli_num_rows($cek);
+
+    if ($hitung < 1) {
+        if (in_array($file_ext, $allowed_ext) === true) {
+            if ($size < 1044070) {
+                move_uploaded_file($file_tmp, 'images/' . $image);
+                $sql = "INSERT INTO stock (namabarang, jenis, stock, harga, image) VALUES ('$namabarang', '$jenis', '$stock', '$harga', '$image')";
+                $result = mysqli_query($connection, $sql);
+                if (!$result) {
+                    die("Query Error: " . mysqli_error($connection));
+                }
+                header("Location: index.php");
+                exit();
+            } else {
+                echo '<script>
+                alert("Ukuran File Terlalu Besar!");
+                window.location.href ="index.php";
+                </script>';
+            }
+        } else {
+            echo '<script>
+            alert("Ekstensi File Tidak Diperbolehkan!");
+            window.location.href ="index.php";
+            </script>';
+        }
+    } else {
+        echo '<script>
+        alert("Barang Sudah Terdaftar!");
+        window.location.href ="index.php";
+        </script>';
     }
-    header("Location: index.php");
-    exit();
 }
 
 //update barang
 if (isset($_POST['updatebarang'])) {
+    $idbarang = $_POST['idbarang'];
     $namabarang = $_POST['namabarang'];
     $jenis = $_POST['jenis'];
     $stock = $_POST['stock'];
     $harga = $_POST['harga'];
-    $idbarang = $_POST['idbarang'];
-    $sql = "UPDATE stock SET namabarang='$namabarang', jenis='$jenis', stock='$stock', harga='$harga' WHERE idbarang='$idbarang'";
-    $result = mysqli_query($connection, $sql);
-    if (!$result) {
-        die("Query Error: " . mysqli_error($connection));
+
+    $allowed_ext = array('png', 'jpg', 'jpeg');
+    $file_name = $_FILES['file']['name'];
+    $dot = explode('.', $file_name);
+    $file_ext = strtolower(end($dot));
+    $size = $_FILES['file']['size'];
+    $file_tmp = $_FILES['file']['tmp_name'];
+    $image = md5(uniqid($file_name, true) . time()) . '.' . $file_ext;
+
+    if ($file_name == null) {
+        $sql = "UPDATE stock SET namabarang='$namabarang', jenis='$jenis', stock='$stock', harga='$harga' WHERE idbarang='$idbarang'";
+        $result = mysqli_query($connection, $sql);
+        if (!$result) {
+            die("Query Error: " . mysqli_error($connection));
+        }
+        header("Location: index.php");
+        exit();
+    } else {
+        if (in_array($file_ext, $allowed_ext) === true) {
+            if ($size < 1044070) {
+                move_uploaded_file($file_tmp, 'images/' . $image);
+                $sql = "SELECT * FROM stock WHERE idbarang='$idbarang'";
+                $result = mysqli_query($connection, $sql);
+                $row = mysqli_fetch_array($result);
+                unlink("images/" . $row['image']);
+
+                $sql = "UPDATE stock SET namabarang='$namabarang', jenis='$jenis', stock='$stock', harga='$harga', image='$image' WHERE idbarang='$idbarang'";
+                $result = mysqli_query($connection, $sql);
+                if (!$result) {
+                    die("Query Error: " . mysqli_error($connection));
+                }
+                header("Location: index.php");
+                exit();
+            } else {
+                echo '<script>
+                alert("Ukuran File Terlalu Besar!");
+                window.location.href ="index.php";
+                </script>';
+            }
+        } else {
+            echo '<script>
+            alert("Ekstensi File Tidak Diperbolehkan!");
+            window.location.href ="index.php";
+            </script>';
+        }
     }
-    header("Location: index.php");
-    exit();
 }
 
 //hapus barang
 if (isset($_POST['hapusbarang'])) {
     $idbarang = $_POST['idbarang'];
+    //hapus gambar
+    $sql = "SELECT * FROM stock WHERE idbarang='$idbarang'";
+    $result = mysqli_query($connection, $sql);
+    $row = mysqli_fetch_array($result);
+    $image = $row['image'];
+    unlink("images/" . $image);
+
+    //hapus data
     $sql = "DELETE FROM stock WHERE idbarang='$idbarang'";
     $result = mysqli_query($connection, $sql);
     if (!$result) {
@@ -114,10 +196,10 @@ if (isset($_POST['hapusbarang'])) {
                                 $barang = $fetch['namabarang'];
 
                             ?>
-                            <div class="alert alert-danger alert-dismissible">
-                                <button class="close" type="button" data-bs-dismiss="alert">&times;</button>
-                                <strong>Perhatian!</strong> Stock <?=$barang;?> Telah Habis
-                            </div>
+                                <div class="alert alert-danger alert-dismissible">
+                                    <button class="close" type="button" data-bs-dismiss="alert">&times;</button>
+                                    <strong>Perhatian!</strong> Stock <?= $barang; ?> Telah Habis
+                                </div>
                             <?php
                             }
                             ?>
@@ -126,6 +208,7 @@ if (isset($_POST['hapusbarang'])) {
                                 <thead>
                                     <tr>
                                         <th>No</th>
+                                        <th>Gambar</th>
                                         <th>Nama Barang</th>
                                         <th>Jenis</th>
                                         <th>Stock</th>
@@ -139,6 +222,12 @@ if (isset($_POST['hapusbarang'])) {
                                     $sql = mysqli_query($connection, $sql);
                                     $no = 1;
                                     while ($row = mysqli_fetch_array($sql)) {
+                                        $image = $row['image'];
+                                        if ($image == null) {
+                                            $image = "No photo";
+                                        } else {
+                                            $image = '<img src="images/' . $image . '" width="50px" height="50px">';
+                                        }
                                         $namabarang = $row['namabarang'];
                                         $jenis = $row['jenis'];
                                         $stock = $row['stock'];
@@ -146,6 +235,7 @@ if (isset($_POST['hapusbarang'])) {
                                     ?>
                                         <tr>
                                             <td><?= $no++; ?></td>
+                                            <td><?= $image ?></td>
                                             <td><?= $namabarang; ?></td>
                                             <td><?= $jenis; ?></td>
                                             <td><?= $stock; ?></td>
@@ -172,7 +262,7 @@ if (isset($_POST['hapusbarang'])) {
                                                     </div>
 
                                                     <!-- Modal body -->
-                                                    <form method="post">
+                                                    <form method="post" enctype="multipart/form-data">
                                                         <div class="modal-body">
                                                             <input type="text" name="namabarang" value="<?= $namabarang; ?>" class="form-control" required>
                                                             <br>
@@ -181,6 +271,8 @@ if (isset($_POST['hapusbarang'])) {
                                                             <input type="number" name="stock" value="<?= $stock; ?>" class="form-control" readonly>
                                                             <br>
                                                             <input type="number" name="harga" value="<?= $harga; ?>" class="form-control" required>
+                                                            <br>
+                                                            <input type="file" name="file" class="form-control">
                                                             <br>
                                                             <input type="hidden" name="idbarang" value="<?= $row['idbarang']; ?>">
                                                             <button type="submit" class="btn btn-primary" name="updatebarang">Update</button>
@@ -259,7 +351,7 @@ if (isset($_POST['hapusbarang'])) {
             </div>
 
             <!-- Modal body -->
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 <div class="modal-body">
                     <input type="text" name="namabarang" placeholder="Nama Barang" class="form-control">
                     <br>
@@ -268,6 +360,8 @@ if (isset($_POST['hapusbarang'])) {
                     <input type="number" name="stock" placeholder="Stock" class="form-control" require>
                     <br>
                     <input type="number" name="harga" placeholder="Harga" class="form-control" require>
+                    <br>
+                    <input type="file" name="file" class="form-control">
                     <br>
                     <button type="submit" class="btn btn-primary" name="submit">Simpan</button>
                 </div>
