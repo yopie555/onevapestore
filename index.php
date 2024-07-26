@@ -101,6 +101,7 @@ if (isset($_POST['hapusbarang'])) {
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#myModal">
                                 Tambah Barang
                             </button>
+                            <a href="export.php" class="btn btn-info">Export Data</a>
                         </div>
                         <div class="card-body">
                             <table id="datatablesSimple">
