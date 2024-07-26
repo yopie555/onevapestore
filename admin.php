@@ -3,48 +3,43 @@ require 'function.php';
 require 'cek.php';
 
 //menambah barang baru
-if (isset($_POST['submit'])) {
-    $namabarang = $_POST['namabarang'];
-    $jenis = $_POST['jenis'];
-    $stock = $_POST['stock'];
-    $harga = $_POST['harga'];
-    $sql = "INSERT INTO stock (namabarang, jenis, stock, harga) VALUES ('$namabarang', '$jenis', '$stock', '$harga')";
+if (isset($_POST['addadmin'])) {
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+    $sql = "INSERT INTO login (email, password) VALUES ('$email', '$password')";
     $result = mysqli_query($connection, $sql);
     if (!$result) {
         die("Query Error: " . mysqli_error($connection));
     }
-    header("Location: index.php");
+    header("Location: admin.php");
     exit();
 }
 
 //update barang
-if (isset($_POST['updatebarang'])) {
-    $namabarang = $_POST['namabarang'];
-    $jenis = $_POST['jenis'];
-    $stock = $_POST['stock'];
-    $harga = $_POST['harga'];
-    $idbarang = $_POST['idbarang'];
-    $sql = "UPDATE stock SET namabarang='$namabarang', jenis='$jenis', stock='$stock', harga='$harga' WHERE idbarang='$idbarang'";
+if (isset($_POST['updateadmin'])) {
+    $email = $_POST['emailuser'];
+    $password = $_POST['passwordbaru'];
+    $iduser = $_POST['iduser'];
+    $sql = "UPDATE login SET email='$email', password='$password' WHERE iduser='$iduser'";
     $result = mysqli_query($connection, $sql);
     if (!$result) {
         die("Query Error: " . mysqli_error($connection));
     }
-    header("Location: index.php");
+    header("Location: admin.php");
     exit();
 }
 
 //hapus barang
-if (isset($_POST['hapusbarang'])) {
-    $idbarang = $_POST['idbarang'];
-    $sql = "DELETE FROM stock WHERE idbarang='$idbarang'";
+if (isset($_POST['hapusadmin'])) {
+    $iduser = $_POST['iduser'];
+    $sql = "DELETE FROM login WHERE iduser='$iduser'";
     $result = mysqli_query($connection, $sql);
     if (!$result) {
         die("Query Error: " . mysqli_error($connection));
     }
-    header("Location: index.php");
+    header("Location: admin.php");
     exit();
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -99,69 +94,47 @@ if (isset($_POST['hapusbarang'])) {
         <div id="layoutSidenav_content">
             <main>
                 <div class="container-fluid px-4">
-                    <h1 class="mt-4">Stock Barang</h1>
+                    <h1 class="mt-4">Kelola Admin</h1>
                     <div class="card mb-4">
                         <div class="card-header">
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#myModal">
-                                Tambah Barang
+                                Tambah Admin
                             </button>
-                            <a href="export.php" class="btn btn-info">Export Data</a>
                         </div>
                         <div class="card-body">
-                            <?php
-                            $ambildatastock = mysqli_query($connection, "SELECT * FROM stock WHERE stock < 1");
-                            while ($fetch = mysqli_fetch_array($ambildatastock)) {
-                                $barang = $fetch['namabarang'];
-
-                            ?>
-                            <div class="alert alert-danger alert-dismissible">
-                                <button class="close" type="button" data-bs-dismiss="alert">&times;</button>
-                                <strong>Perhatian!</strong> Stock <?=$barang;?> Telah Habis
-                            </div>
-                            <?php
-                            }
-                            ?>
 
                             <table id="datatablesSimple">
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Nama Barang</th>
-                                        <th>Jenis</th>
-                                        <th>Stock</th>
-                                        <th>Harga</th>
+                                        <th>Email User </th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php
-                                    $sql = "SELECT * FROM stock";
+                                    $sql = "SELECT * FROM login";
                                     $sql = mysqli_query($connection, $sql);
                                     $no = 1;
                                     while ($row = mysqli_fetch_array($sql)) {
-                                        $namabarang = $row['namabarang'];
-                                        $jenis = $row['jenis'];
-                                        $stock = $row['stock'];
-                                        $harga = $row['harga'];
+                                        $email = $row['email'];
+                                        $id = $row['iduser'];
                                     ?>
                                         <tr>
                                             <td><?= $no++; ?></td>
-                                            <td><?= $namabarang; ?></td>
-                                            <td><?= $jenis; ?></td>
-                                            <td><?= $stock; ?></td>
-                                            <td><?= $harga; ?></td>
+                                            <td><?= $email; ?></td>
                                             <td>
-                                                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#edit<?= $row['idbarang']; ?>">
+                                                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#edit<?= $row['iduser']; ?>">
                                                     Edit
                                                 </button>
-                                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete<?= $row['idbarang']; ?>">
+                                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete<?= $row['iduser']; ?>">
                                                     Delete
                                                 </button>
                                             </td>
                                         </tr>
 
                                         <!-- The Modal Edit -->
-                                        <div class="modal fade" id="edit<?= $row['idbarang']; ?>">
+                                        <div class="modal fade" id="edit<?= $row['iduser']; ?>">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
 
@@ -174,16 +147,12 @@ if (isset($_POST['hapusbarang'])) {
                                                     <!-- Modal body -->
                                                     <form method="post">
                                                         <div class="modal-body">
-                                                            <input type="text" name="namabarang" value="<?= $namabarang; ?>" class="form-control" required>
+                                                            <input type="text" name="emailuser" value="<?= $email; ?>" class="form-control" placeholder="Email" required>
                                                             <br>
-                                                            <input type="text" name="jenis" value="<?= $jenis; ?>" class="form-control" required>
+                                                            <input type="password" name="passwordbaru" class="form-control" placeholder="Password" required>
                                                             <br>
-                                                            <input type="number" name="stock" value="<?= $stock; ?>" class="form-control" readonly>
-                                                            <br>
-                                                            <input type="number" name="harga" value="<?= $harga; ?>" class="form-control" required>
-                                                            <br>
-                                                            <input type="hidden" name="idbarang" value="<?= $row['idbarang']; ?>">
-                                                            <button type="submit" class="btn btn-primary" name="updatebarang">Update</button>
+                                                            <input type="hidden" name="iduser" value="<?= $row['iduser']; ?>">
+                                                            <button type="submit" class="btn btn-primary" name="updateadmin">Update</button>
                                                         </div>
                                                     </form>
 
@@ -192,7 +161,7 @@ if (isset($_POST['hapusbarang'])) {
                                         </div>
 
                                         <!-- The Modal Delete -->
-                                        <div class="modal fade" id="delete<?= $row['idbarang']; ?>">
+                                        <div class="modal fade" id="delete<?= $row['iduser']; ?>">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
 
@@ -205,11 +174,11 @@ if (isset($_POST['hapusbarang'])) {
                                                     <!-- Modal body -->
                                                     <form method="post">
                                                         <div class="modal-body                                                    ">
-                                                            Apakah Anda Yakin Ingin Menghapus <?= $namabarang; ?>?
-                                                            <input type="hidden" name="idbarang" value="<?= $row['idbarang']; ?>">
+                                                            Apakah Anda Yakin Ingin Menghapus <?= $email; ?>?
+                                                            <input type="hidden" name="iduser" value="<?= $row['iduser']; ?>">
                                                             <br>
                                                             <br>
-                                                            <button type="submit" class="btn btn-danger" name="hapusbarang">Hapus</button>
+                                                            <button type="submit" class="btn btn-danger" name="hapusadmin">Hapus</button>
                                                         </div>
                                                     </form>
 
@@ -254,22 +223,18 @@ if (isset($_POST['hapusbarang'])) {
 
             <!-- Modal Header -->
             <div class="modal-header">
-                <h4 class="modal-title">Tambah Barang</h4>
+                <h4 class="modal-title">Tambah Admin</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <!-- Modal body -->
             <form method="post">
                 <div class="modal-body">
-                    <input type="text" name="namabarang" placeholder="Nama Barang" class="form-control">
+                    <input type="email" name="email" placeholder="Email" class="form-control" required>
                     <br>
-                    <input type="text" name="jenis" placeholder="Jenis Barang" class="form-control" require>
+                    <input type="password" name="password" placeholder="Password" class="form-control" require>
                     <br>
-                    <input type="number" name="stock" placeholder="Stock" class="form-control" require>
-                    <br>
-                    <input type="number" name="harga" placeholder="Harga" class="form-control" require>
-                    <br>
-                    <button type="submit" class="btn btn-primary" name="submit">Simpan</button>
+                    <button type="submit" class="btn btn-primary" name="addadmin">Simpan</button>
                 </div>
             </form>
 
