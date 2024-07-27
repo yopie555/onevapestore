@@ -18,7 +18,7 @@ if (isset($_POST['submit'])) {
     $image = md5(uniqid($file_name, true) . time()) . '.' . $file_ext;
 
     //cek barang sudah ada atau belum
-    $cek = mysqli_query($connection, "SELECT * FROM stock WHERE namabarang='$namabarang'");
+    $cek = mysqli_query($connection, "SELECT * FROM stock WHERE namabarang='$namabarang' AND jenis='$jenis'");
     $hitung = mysqli_num_rows($cek);
 
     if ($hitung < 1) {
@@ -141,6 +141,12 @@ if (isset($_POST['hapusbarang'])) {
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="css/styles.css" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <style>
+        a {
+            text-decoration: none;
+            color: black;
+        }
+    </style>
 </head>
 
 <body class="sb-nav-fixed">
@@ -236,7 +242,7 @@ if (isset($_POST['hapusbarang'])) {
                                         <tr>
                                             <td><?= $no++; ?></td>
                                             <td><?= $image ?></td>
-                                            <td><?= $namabarang; ?></td>
+                                            <td><strong><a href="detail.php?id=<?= $row['idbarang'] ?>"><?= $namabarang; ?></a></strong></td>
                                             <td><?= $jenis; ?></td>
                                             <td><?= $stock; ?></td>
                                             <td><?= $harga; ?></td>
